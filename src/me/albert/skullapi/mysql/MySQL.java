@@ -29,7 +29,7 @@ public class MySQL {
         ENABLED = true;
         FileConfiguration cfg = SkullAPI.mysqlSettings.getConfig();
         HikariConfig config = new HikariConfig();
-        config.setPoolName("SkullAPI");
+        config.setPoolName(SkullAPI.getInstance().getName());
         config.setDriverClassName("com.mysql.cj.jdbc.Driver");
         config.setUsername(cfg.getString("storage.username"));
         config.setPassword(cfg.getString("storage.password"));
@@ -89,8 +89,10 @@ public class MySQL {
     }
 
     public static boolean hasData() {
+        String sql = "SELECT * FROM `%s`.`%s` LIMIT 1;";
+        sql = String.format(sql, DATABASE, TABLE);
         try (Connection con = dataSource.getConnection();
-             PreparedStatement stmt = con.prepareStatement("SELECT * FROM `" + DATABASE + "`.`" + TABLE + "` LIMIT 1;")) {
+             PreparedStatement stmt = con.prepareStatement(sql)) {
             try (ResultSet resultSet = stmt.executeQuery()) {
                 if (resultSet.next()) {
                     return true;
@@ -104,8 +106,10 @@ public class MySQL {
 
     public static void savePlayer(String player, String[] skin) {
         if (getPlayer(player) != null) {
+            String sql = "UPDATE `%s`.`%s` SET `signature`=?, `value`=?  WHERE  `player`=?;";
+            sql = String.format(sql, DATABASE, TABLE);
             try (Connection con = dataSource.getConnection();
-                 PreparedStatement stmt = con.prepareStatement("UPDATE `skullapi`.`skulls` SET `signature`=?, `value`=?  WHERE  `player`=?;", RETURN_GENERATED_KEYS)) {
+                 PreparedStatement stmt = con.prepareStatement(sql, RETURN_GENERATED_KEYS)) {
                 stmt.setString(1, skin[0]);
                 stmt.setString(2, skin[1]);
                 stmt.setString(3, player);
@@ -115,10 +119,10 @@ public class MySQL {
             }
             return;
         }
+        String sql = "INSERT INTO `%s`.`%s` (`player`, `signature`, `value`) VALUES(?,?,?) ON DUPLICATE KEY UPDATE signature=?,value=?;";
+        sql = String.format(sql, DATABASE, TABLE);
         try (Connection con = dataSource.getConnection();
-             PreparedStatement stmt = con.prepareStatement("INSERT INTO `" + DATABASE + "`.`" + TABLE + "` " +
-                     "(`player`, `signature`, `value`)" +
-                     "VALUES(?,?,?)  ON DUPLICATE KEY UPDATE  signature=?,value=?;", RETURN_GENERATED_KEYS)) {
+             PreparedStatement stmt = con.prepareStatement(sql, RETURN_GENERATED_KEYS)) {
             stmt.setString(1, player);
             stmt.setString(2, skin[0]);
             stmt.setString(3, skin[1]);
@@ -131,9 +135,10 @@ public class MySQL {
     }
 
     public static String[] getPlayer(String name) {
+        String sql = "SELECT `id`, `player`, `signature` , `value` FROM `%s`.`%s` WHERE `player`=?;";
+        sql = String.format(sql, DATABASE, TABLE);
         try (Connection con = dataSource.getConnection();
-             PreparedStatement stmt = con.prepareStatement("SELECT `id`, `player`, `signature` , `value` " +
-                     "FROM `" + DATABASE + "`.`" + TABLE + "` WHERE  `player`=?;")) {
+             PreparedStatement stmt = con.prepareStatement(sql)) {
             stmt.setString(1, name);
             try (ResultSet resultSet = stmt.executeQuery()) {
                 if (resultSet.next()) {
