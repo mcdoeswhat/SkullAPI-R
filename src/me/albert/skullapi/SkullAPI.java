@@ -40,7 +40,7 @@ public class SkullAPI extends JavaPlugin {
         return null;
     }
 
-    public static void saveHeads() {
+    private static void saveHeads() {
         Bukkit.getScheduler().runTaskLaterAsynchronously(SkullAPI.getInstance(), () -> {
             try {
                 for (Player p : Bukkit.getOnlinePlayers()) {
